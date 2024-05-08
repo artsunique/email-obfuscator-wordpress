@@ -5,38 +5,32 @@
 |--------------------------------------------------------------------------
 |
 | The following code will obfuscate all email addresses in your content and hardcoded into your theme's files.
-| It works by starting an output buffer before the page starts to output,
-| then at the end of the page it applies a callback function to the buffer's contents,
-| replacing all instances of mailto links with obfuscated versions.
+| It uses a regular expression to find all mailto links and then replaces them with obfuscated versions using
+| WordPress's antispambot() function. This function works by converting characters in the email address into HTML
+| entities, which helps prevent spam by making it difficult for bots to harvest email addresses.
+|
+| This code should be added to your theme's functions.php file.
 |
 */
 
-// Start the output buffer with email_callback as the callback function
-function obfuscate_all_emails() {
-ob_start("email_callback");
+function obfuscate_mailto_links($content) {
+    // This pattern matches mailto links
+    $pattern = '/<a\s[^>]*href=["\']mailto:([^@"\']+@[^@"\']+)["\'][^>]*>([^<]+)<\/a>/i';
+    $content = preg_replace_callback($pattern, function ($matches) {
+        // Obfuscate the email address
+        $obfuscated_mail = antispambot($matches[1]);
+        return '<a href="mailto:' . $obfuscated_mail . '">' . antispambot($matches[2]) . '</a>';
+    }, $content);
+
+    return $content;
 }
 
-// This function applies a regex to the buffer's contents,
-// replacing all instances of mailto links with obfuscated versions.
-function email_callback($buffer) {
-$pattern = '/(<a href="mailto:)(.*?)(>)(.*?)(<\/a>)/i';
-    return preg_replace_callback($pattern, "replace_emails", $buffer);
-}
+// Apply this filter to 'the_content' to affect post/page content
+add_filter('the_content', 'obfuscate_mailto_links');
 
-// This function obfuscates an email address using WordPress's antispambot function
-function replace_emails($matches) {
-return '<a href="mailto:' . antispambot($matches[2]) . '">' . $matches[4] . '</a>';
-}
+// Apply this filter to 'widget_text' to affect text widgets
+add_filter('widget_text', 'obfuscate_mailto_links');
 
-// Hook the function to start the output buffer into the 'get_header' action
-// This means it will start the output buffer before the header is outputted,
-// ensuring all of your content goes through the buffer
-add_action('get_header', 'obfuscate_all_emails');
-
-// Hook the function to end the output buffer into the 'wp_footer' action
-// This will end the output buffer after the footer is outputted,
-// ensuring all of your content has been passed through the callback function.
-// We use priority 999 to ensure it runs last after all other footer actions.
-add_action('wp_footer', function () {
-ob_end_flush();
-}, 999);
+// Optionally apply to other filters where email might appear
+add_filter('the_excerpt', 'obfuscate_mailto_links');
+add_filter('comment_text', 'obfuscate_mailto_links');
