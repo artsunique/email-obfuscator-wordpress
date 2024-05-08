@@ -42,3 +42,15 @@ Please remember to replace `YourEmail@YourDomain.com` with the actual email addr
 - Regular Expression
 - Functions.php
 - Mailto Links
+
+## Changelog
+
+Version 1.0.0
+Date: 2024-05-08
+Works with currenr WP Version
+
+- Added `obfuscate_mailto_links` function to obfuscate all email addresses in mailto links across the site.
+- The function applies to content in posts, pages, widgets, excerpts, and comments.
+- Uses WordPress's antispambot() function to convert email addresses into HTML entities, preventing email harvesting by bots.
+- Filters applied: `the_content`, `widget_text`, `the_excerpt`, and `comment_text` to cover a wide range of outputs.
+
